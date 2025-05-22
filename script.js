@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return result.value;
     }
 
-    function afterDisplayFileContent(){
+    function afterDisplayFileContent() {
         updateActiveFileStyle();
         ensureScrollbars();
         if (searchInput.value.trim()) {
@@ -112,6 +112,31 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     }
 
+    //执行文件内容的匹配及渲染搜索结果
+    function matchSeatchAndDisplay(searchResults, fileIndex, searchTerm, file, content) {
+        const regex = new RegExp(escapeRegExp(searchTerm),'gi');
+        let match;
+        const matches = [];
+
+        while ((match = regex.exec(content)) !== null) {
+            matches.push({
+                index: match.index,
+                length: match[0].length,
+                context: getMatchContext(content, match.index, match[0].length)
+            });
+        }
+
+        if (matches.length > 0) {
+            searchResults[fileIndex] = matches;
+            renderSearchResult(file, fileIndex, matches);
+            return true;
+        }
+        return false;
+    }
+
+    function finishSearchFiles(hasResults) {
+        showNotification(hasResults ? `搜索完成，共找到${Object.keys(searchResults).length}个文件包含结果` : '搜索完成，未找到匹配内容');
+    }
     // 执行搜索
     function performSearch() {
         const searchTerm = searchInput.value.trim();
@@ -123,33 +148,26 @@ document.addEventListener('DOMContentLoaded', function() {
         let filesProcessed = 0;
         let hasResults = false;
 
-        files.forEach( (file, fileIndex) => {
+        files.forEach(async (file, fileIndex) => {
+            //所有文件处理完再提示
+            filesProcessed++;
+
+            if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+                const wordContent = await displayWordFileContent(fileIndex);
+                hasResults = matchSeatchAndDisplay(searchResults, fileIndex, searchTerm, file, wordContent);
+                if (filesProcessed === files.length) {
+                    finishSearchFiles(hasResults);
+                }
+                return;
+            }
+
             const reader = new FileReader();
 
             reader.onload = function(e) {
                 const content = e.target.result;
-                const regex = new RegExp(escapeRegExp(searchTerm),'gi');
-                let match;
-                const matches = [];
-
-                while ((match = regex.exec(content)) !== null) {
-                    matches.push({
-                        index: match.index,
-                        length: match[0].length,
-                        context: getMatchContext(content, match.index, match[0].length)
-                    });
-                }
-
-                if (matches.length > 0) {
-                    searchResults[fileIndex] = matches;
-                    renderSearchResult(file, fileIndex, matches);
-                    hasResults = true;
-                }
-
-                filesProcessed++;
-                // 所有文件处理完成后再提示
+                hasResults = matchSeatchAndDisplay(searchResults, fileIndex, searchTerm, file, content);
                 if (filesProcessed === files.length) {
-                    showNotification(hasResults ? `搜索完成，共找到${Object.keys(searchResults).length}个文件包含结果` : '搜索完成，未找到匹配内容');
+                    finishSearchFiles(hasResults);
                 }
             }
             ;
