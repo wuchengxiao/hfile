@@ -74,7 +74,7 @@ body {
 .main-content {
     display: flex;
     flex: 1;
-    overflow: hidden;
+    overflow: auto;
     flex-direction: column;
 }
 
@@ -86,22 +86,22 @@ body {
 }
 
 .file-list-panel {
-    flex: 0 0 150px;
-    min-height: 120px;
+    flex: 0 0 30vh;
+    min-height: 30vh;
     overflow-x: hidden;
     background: #fff;
 }
 
 .content-panel {
     flex: 1;
-    min-height: 200px;
+    min-height: 30vh;
     white-space: pre-wrap;
     background: #fff;
     overflow-x: auto;
 }
 
 .result-panel {
-    flex: 0 0 150px;
+    flex: 0 0 30vh;
     min-height: 120px;
     background: #f8f9fa;
 }
