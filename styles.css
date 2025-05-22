@@ -1,0 +1,206 @@
+ {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin: 0;
+}
+
+/* 顶部区域 */
+.header {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+    min-height: 60px;
+    background: #f8f9fa;
+    flex-wrap: wrap;
+}
+
+.app-title {
+    flex: 0 0 100%;
+    font-size: 1.5rem;
+    font-weight: bold;
+    padding: 5px 10px;
+}
+
+.control-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    flex-wrap: wrap;
+}
+
+.file-input-label {
+    padding: 6px 12px;
+    background: #4285f4;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+#file-input {
+    display: none;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 120px;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.nav-btn {
+    padding: 6px 10px;
+    background: #f1f1f1;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+/* 主内容区 */
+.main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    flex-direction: column;
+}
+
+.panel {
+    overflow: auto;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+    position: relative;
+}
+
+.file-list-panel {
+    flex: 0 0 150px;
+    min-height: 120px;
+    overflow-x: hidden;
+    background: #fff;
+}
+
+.content-panel {
+    flex: 1;
+    min-height: 200px;
+    white-space: pre-wrap;
+    background: #fff;
+    overflow-x: auto;
+}
+
+.result-panel {
+    flex: 0 0 150px;
+    min-height: 120px;
+    background: #f8f9fa;
+}
+
+/* 响应式设计 - 桌面端 */
+@media (min-width: 768px) {
+    .app-title {
+        flex: 0 0 200px;
+    }
+
+    .main-content {
+        flex-direction: row;
+    }
+
+    .panel {
+        border-right: 1px solid #ddd;
+        border-bottom: none;
+    }
+
+    .file-list-panel {
+        flex: 0 0 250px;
+    }
+
+    .result-panel {
+        flex: 0 0 300px;
+    }
+}
+
+/* 文件列表和搜索结果样式 */
+.file-item {
+    padding: 6px 8px;
+    margin: 3px 0;
+    cursor: pointer;
+    font-size: 0.9rem;
+    border-radius: 3px;
+    word-break: break-word;
+}
+
+.file-item:hover {
+    background: #e9ecef;
+}
+
+.file-item.active {
+    background: #e7f1ff;
+}
+
+.result-group {
+    margin-bottom: 10px;
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    cursor: pointer;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.result-content {
+    padding: 3px 0;
+    display: none;
+    border-left: 2px solid #dee2e6;
+    margin-left: 8px;
+}
+
+.match-item {
+    padding: 6px;
+    margin: 3px 0;
+    cursor: pointer;
+    font-size: 0.85rem;
+    border-radius: 3px;
+}
+
+.match-item:hover {
+    background: #e9ecef;
+}
+
+.highlight {
+    background: #fff3cd;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 1000;
+}
+
+.notification.show {
+    opacity: 1;
+}
