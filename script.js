@@ -58,25 +58,46 @@ document.addEventListener('DOMContentLoaded', function() {
             const fileItem = document.createElement('div');
             fileItem.className = `file-item ${index === currentFileIndex ? 'active' : ''}`;
             fileItem.textContent = file.name;
-            fileItem.addEventListener('click', () => displayFileContent(index));
+            fileItem.addEventListener('click', async () => await displayFileContent(index));
             fileListContainer.appendChild(fileItem);
         }
         );
     }
 
+    // 显示work文件
+    async function displayWordFileContent(index) {
+        const file = files[index];
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({
+            arrayBuffer
+        });
+        return result.value;
+    }
+
+    function afterDisplayFileContent(){
+        updateActiveFileStyle();
+        ensureScrollbars();
+        if (searchInput.value.trim()) {
+            highlightMatchesInCurrentFile();
+        }
+    }
+
     // 显示文件内容
-    function displayFileContent(index) {
+    async function displayFileContent(index) {
         currentFileIndex = index;
         const file = files[index];
+
+        if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+            contentDisplay.textContent = await displayWordFileContent(index);
+            afterDisplayFileContent();
+            return;
+        }
+
         const reader = new FileReader();
 
         reader.onload = function(e) {
             contentDisplay.textContent = e.target.result;
-            updateActiveFileStyle();
-            ensureScrollbars();
-            if (searchInput.value.trim()) {
-                highlightMatchesInCurrentFile();
-            }
+            afterDisplayFileContent()
         }
         ;
 
@@ -94,22 +115,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // 执行搜索
     function performSearch() {
         const searchTerm = searchInput.value.trim();
-        if (!searchTerm) return;
-        
+        if (!searchTerm)
+            return;
+
         searchResults = {};
         resultContainer.innerHTML = '';
         let filesProcessed = 0;
         let hasResults = false;
 
-        files.forEach((file, fileIndex) => {
+        files.forEach( (file, fileIndex) => {
             const reader = new FileReader();
-            
+
             reader.onload = function(e) {
                 const content = e.target.result;
-                const regex = new RegExp(escapeRegExp(searchTerm), 'gi');
+                const regex = new RegExp(escapeRegExp(searchTerm),'gi');
                 let match;
                 const matches = [];
-                
+
                 while ((match = regex.exec(content)) !== null) {
                     matches.push({
                         index: match.index,
@@ -117,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         context: getMatchContext(content, match.index, match[0].length)
                     });
                 }
-                
+
                 if (matches.length > 0) {
                     searchResults[fileIndex] = matches;
                     renderSearchResult(file, fileIndex, matches);
@@ -127,14 +149,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 filesProcessed++;
                 // 所有文件处理完成后再提示
                 if (filesProcessed === files.length) {
-                    showNotification(hasResults ? 
-                        `搜索完成，共找到${Object.keys(searchResults).length}个文件包含结果` : 
-                        '搜索完成，未找到匹配内容');
+                    showNotification(hasResults ? `搜索完成，共找到${Object.keys(searchResults).length}个文件包含结果` : '搜索完成，未找到匹配内容');
                 }
-            };
-            
+            }
+            ;
+
             reader.readAsText(file);
-        });
+        }
+        );
 
         // 如果没有文件需要处理，立即提示
         if (files.length === 0) {

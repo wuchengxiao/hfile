@@ -12,7 +12,7 @@
             <div class="app-title">文件阅读器</div>
             <div class="control-panel">
                 <label class="file-input-label" for="file-input">选择文件</label>
-                <input type="file" id="file-input" multiple accept=".txt,.js,.css,.md,.json,.html,.xml,.csv">
+                <input type="file" id="file-input" multiple accept=".txt,.js,.css,.md,.json,.html,.xml,.csv,.url,.log,.doc,.docx">
                 <input type="text" class="search-box" id="search-input" placeholder="输入搜索内容...">
                 <button class="nav-btn" id="search-btn">搜索</button>
                 <button class="nav-btn" id="prev-btn">上一个</button>
@@ -24,6 +24,7 @@
             <div class="panel content-panel" id="content-display"></div>
             <div class="panel result-panel" id="result-container"></div>
         </div>
+        <script src="mammoth.browser.min-1.4.0.js"></script>
         <script src="script.js"></script>
     </body>
 </html>
