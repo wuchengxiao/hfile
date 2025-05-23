@@ -1,5 +1,5 @@
 function showNotification(message) {
-    const notification = document.getElementById('notification');
+    const notification = _id('notification');
     notification.textContent = message;
     notification.classList.add('show');
 
@@ -8,15 +8,15 @@ function showNotification(message) {
     }
     , 3000);
 }
-document.addEventListener('DOMContentLoaded', function() {
-    const fileInput = document.getElementById('file-input');
-    const fileListContainer = document.getElementById('file-list-container');
-    const contentDisplay = document.getElementById('content-display');
-    const searchInput = document.getElementById('search-input');
-    const searchBtn = document.getElementById('search-btn');
-    const resultContainer = document.getElementById('result-container');
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
+_on(document,'DOMContentLoaded', function() {
+    const fileInput = _id('file-input');
+    const fileListContainer = _id('file-list-container');
+    const contentDisplay = _id('content-display');
+    const searchInput = _id('search-input');
+    const searchBtn = _id('search-btn');
+    const resultContainer = _id('result-container');
+    const prevBtn = _id('prev-btn');
+    const nextBtn = _id('next-btn');
 
     let files = [];
     let currentFileIndex = -1;
@@ -27,10 +27,10 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // 事件监听
-    fileInput.addEventListener('change', handleFileSelect);
-    searchBtn.addEventListener('click', performSearch);
-    prevBtn.addEventListener('click', () => navigateMatch(-1));
-    nextBtn.addEventListener('click', () => navigateMatch(1));
+    _on(fileInput,'change', handleFileSelect);
+    _on(searchBtn,'click', performSearch);
+    _on(prevBtn,'click', () => navigateMatch(-1));
+    _on(nextBtn,'click', () => navigateMatch(1));
 
     // 确保面板在加载时正确显示滚动条
     function ensureScrollbars() {
@@ -55,10 +55,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderFileList() {
         fileListContainer.innerHTML = '';
         files.forEach( (file, index) => {
-            const fileItem = document.createElement('div');
+            const fileItem = _c('div');
             fileItem.className = `file-item ${index === currentFileIndex ? 'active' : ''}`;
             fileItem.textContent = file.name;
-            fileItem.addEventListener('click', async () => await displayFileContent(index));
+            _on(fileItem,'click', async () => await displayFileContent(index));
             fileListContainer.appendChild(fileItem);
         }
         );
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function displayWordFileContent(index) {
         const file = files[index];
         const arrayBuffer = await file.arrayBuffer();
-        const result = await mammoth.extractRawText({
+        const result = await mammoth.convertToHtml({
             arrayBuffer
         });
         return result.value;
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const file = files[index];
 
         if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
-            contentDisplay.textContent = await displayWordFileContent(index);
+            contentDisplay.innerHTML = await displayWordFileContent(index);
             afterDisplayFileContent();
             return;
         }
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const reader = new FileReader();
 
         reader.onload = function(e) {
-            contentDisplay.textContent = e.target.result;
+            contentDisplay.innerHTML = e.target.result;
             afterDisplayFileContent()
         }
         ;
@@ -184,24 +184,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 渲染搜索结果
     function renderSearchResult(file, fileIndex, matches) {
-        const resultGroup = document.createElement('div');
+        const resultGroup = _c('div');
         resultGroup.className = 'result-group';
 
-        const resultHeader = document.createElement('div');
+        const resultHeader = _c('div');
         resultHeader.className = 'result-header';
         resultHeader.innerHTML = `
             <span>${file.name} (${matches.length}处匹配)</span>
             <span>▶</span>
         `;
 
-        const resultContent = document.createElement('div');
+        const resultContent = _c('div');
         resultContent.className = 'result-content';
 
         matches.forEach( (match, matchIndex) => {
-            const matchItem = document.createElement('div');
+            const matchItem = _c('div');
             matchItem.className = 'match-item';
             matchItem.innerHTML = `...${highlightMatch(match.context, searchInput.value)}...`;
-            matchItem.addEventListener('click', () => {
+            _on(matchItem,'click', () => {
                 displayFileContent(fileIndex);
                 scrollToMatch(fileIndex, matchIndex);
             }
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         );
 
-        resultHeader.addEventListener('click', () => {
+        _on(resultHeader,'click', () => {
             const isHidden = resultContent.style.display !== 'block';
             resultContent.style.display = isHidden ? 'block' : 'none';
             resultHeader.querySelector('span:last-child').textContent = isHidden ? '▼' : '▶';
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentFileIndex === -1 || !searchResults[currentFileIndex])
             return;
 
-        const content = contentDisplay.textContent;
+        const content = contentDisplay.innerHTML;
         const matches = searchResults[currentFileIndex];
         let highlightedContent = '';
         let lastIndex = 0;
@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fileIndex,
             matchIndex
         };
-        const highlighted = contentDisplay.querySelectorAll('.highlight');
+        const highlighted = _findAll(contentDisplay,'.highlight');
 
         if (highlighted.length > matchIndex) {
             highlighted[matchIndex].scrollIntoView({
