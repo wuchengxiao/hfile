@@ -13,7 +13,7 @@ body {
     margin: 0;
 }
 
-/* 顶部区域 */
+/* é¡¶éƒ¨åŒºåŸŸ */
 .header {
     display: flex;
     border-bottom: 1px solid #ddd;
@@ -70,7 +70,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* 主内容区 */
+/* ä¸»å†…å®¹åŒº */
 .main-content {
     display: flex;
     flex: 1;
@@ -106,7 +106,7 @@ body {
     background: #f8f9fa;
 }
 
-/* 响应式设计 - 桌面端 */
+/* å“åº”å¼è®¾è®¡ - æ¡Œé¢ç«¯ */
 @media (min-width: 768px) {
     .app-title {
         flex: 0 0 200px;
@@ -130,7 +130,7 @@ body {
     }
 }
 
-/* 文件列表和搜索结果样式 */
+/* æ–‡ä»¶åˆ—è¡¨å’Œæœç´¢ç»“æžœæ ·å¼ */
 .file-item {
     padding: 6px 8px;
     margin: 3px 0;
@@ -203,4 +203,19 @@ body {
 
 .notification.show {
     opacity: 1;
+}
+
+.docx-color-red { color: #FF0000; }
+.docx-color-blue { color: #0000FF; }
+.docx-color-green {color: green;}
+.docx-color-gray {color: gray;}
+.docx-color-yellow {color: yellow;}
+.docx-color-custom { color: var(--docx-color); }
+
+section.pj-docx {
+    padding: 10px !important;
+}
+
+.highlight.current-view {
+    box-shadow: 1px 1px 4px 0px;
 }

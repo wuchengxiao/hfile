@@ -8,7 +8,7 @@ function showNotification(message) {
     }
     , 3000);
 }
-_on(document,'DOMContentLoaded', function() {
+_on(document, 'DOMContentLoaded', function() {
     const fileInput = _id('file-input');
     const fileListContainer = _id('file-list-container');
     const contentDisplay = _id('content-display');
@@ -19,7 +19,8 @@ _on(document,'DOMContentLoaded', function() {
     const nextBtn = _id('next-btn');
 
     let files = [];
-    let currentFileIndex = -1;
+    let fileContents = {};
+    let currentFileName = null;
     let searchResults = {};
     let currentMatch = {
         fileIndex: -1,
@@ -27,10 +28,10 @@ _on(document,'DOMContentLoaded', function() {
     };
 
     // 事件监听
-    _on(fileInput,'change', handleFileSelect);
-    _on(searchBtn,'click', performSearch);
-    _on(prevBtn,'click', () => navigateMatch(-1));
-    _on(nextBtn,'click', () => navigateMatch(1));
+    _on(fileInput, 'change', handleFileSelect);
+    _on(searchBtn, 'click', performSearch);
+    _on(prevBtn, 'click', () => navigateMatch(-1));
+    _on(nextBtn, 'click', () => navigateMatch(1));
 
     // 确保面板在加载时正确显示滚动条
     function ensureScrollbars() {
@@ -46,8 +47,8 @@ _on(document,'DOMContentLoaded', function() {
         files = [...files, ...newFiles];
         renderFileList();
         ensureScrollbars();
-        if (files.length > 0 && currentFileIndex === -1) {
-            displayFileContent(0);
+        if (files.length > 0 && !currentFileName) {
+            displayFileContentFromContents(files[0].name);
         }
     }
 
@@ -56,64 +57,116 @@ _on(document,'DOMContentLoaded', function() {
         fileListContainer.innerHTML = '';
         files.forEach( (file, index) => {
             const fileItem = _c('div');
-            fileItem.className = `file-item ${index === currentFileIndex ? 'active' : ''}`;
+            fileItem.className = `file-item ${file.name === currentFileName ? 'active' : ''}`;
             fileItem.textContent = file.name;
-            _on(fileItem,'click', async () => await displayFileContent(index));
+            fileContents[file.name] = null;
+            _on(fileItem, 'click', () => displayFileContentFromContents(file.name));
             fileListContainer.appendChild(fileItem);
         }
         );
     }
 
-    // 显示work文件
-    async function displayWordFileContent(index) {
-        const file = files[index];
-        const arrayBuffer = await file.arrayBuffer();
-        const result = await mammoth.convertToHtml({
-            arrayBuffer
-        });
-        return result.value;
+    // 读word文件内容
+    function readWordFile(file,cb) {
+        const reader = new FileReader();
+        //const arrayBuffer = file.arrayBuffer();
+        //const text = await file.text();
+        reader.onload = function(event) {
+            const arrayBuffer = event.target.result;
+            mammoth.convertToHtml({
+                arrayBuffer
+            }, {
+                // styleMap: ["w[color='EE0000'] => span.docx-color-red", "w[color='#EE0000'] => span.docx-color-red", "r[color='EE0000'] => span.docx-color-red", "r[color='#EE0000'] => span.docx-color-red", "r[style-name='0000FF'] => span.docx-color-blue", "r[style-name='008000'] => span.docx-color-green", "r[style-name='808080'] => span.docx-color-gray", "r[style-name='ffff00'] => span.docx-color-yellow", "r[style-name] => span.docx-color-custom[style='color:${color};']", "r:not([style-name]) => span"],
+                // transformDocument: mammoth.transforms.paragraph(element => {
+                //   if (element.color) {
+                //     return {
+                //       ...element,
+                //       style: `--docx-color: #${element.color};`
+                //     };
+                //   }
+                //   return element;
+                // })
+            }).then(result=>{
+                cb(result.value);
+            });
+            //return result.value;
+        }
+        return reader.readAsArrayBuffer(file);
+        // var options = { inWrapper: false, ignoreWidth: true, ignoreHeight: true, className:'pj-docx', ignoreFonts‌: true};
+        // var hiddenDiv = _c("div");
+        // var result = await docx.renderAsync(file, hiddenDiv, null, options);
+        // console.log("docx: finish",result);
+        // return hiddenDiv.innerHTML;
+        // .then(x => {console.log("docx: finished",x));
     }
 
     function afterDisplayFileContent() {
         updateActiveFileStyle();
         ensureScrollbars();
-        if (searchInput.value.trim()) {
-            highlightMatchesInCurrentFile();
-        }
     }
 
-    // 显示文件内容
-    async function displayFileContent(index) {
-        currentFileIndex = index;
-        const file = files[index];
-
-        if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
-            contentDisplay.innerHTML = await displayWordFileContent(index);
-            afterDisplayFileContent();
-            return;
+    // 从内存中显示文件内容
+    function displayFileContentFromContents(fileName){
+        const fileContent = fileContents[fileName];
+        if(fileContent == null){
+            readFileByName(fileName);
         }
-
+        contentDisplay.innerHTML = fileContent;
+        currentFileName = fileName;
+        afterDisplayFileContent();
+    }
+    function readFileByName(fileName, cb){
+        const file = files.find(file=>file.name == fileName);
+        if(file.name.endsWith('.docx')){
+            const fileName = file.name;
+            readWordFile(file, (content)=>{
+                fileContents[fileName] = content;
+                if(currentFileName = fileName){
+                    displayFileContentFromContents(fileName);
+                }
+                cb && cb(content);
+            });
+        }else{
+            readTextFile(file,(content)=>{
+                fileContents[fileName] = content;
+                if(currentFileName = fileName){
+                    displayFileContentFromContents(fileName);
+                }
+                cb && cb(content);
+            })
+        }
+    }
+    // 显示文件内容
+    function readTextFile(file, cb) {
+        currentFileName = file.name;
         const reader = new FileReader();
 
         reader.onload = function(e) {
-            contentDisplay.innerHTML = e.target.result;
-            afterDisplayFileContent()
+            const fileContent = e.target.result;
+            contentDisplay.innerHTML = fileContent;
+            fileContents[file.name] = fileContent;
+            afterDisplayFileContent();
+            cb(fileContent);
         }
-        ;
-
         reader.readAsText(file);
     }
 
     // 更新活动文件样式
     function updateActiveFileStyle() {
         document.querySelectorAll('.file-item').forEach( (item, index) => {
-            item.classList.toggle('active', index === currentFileIndex);
+            item.classList.toggle('active', item.textContent === currentFileName);
         }
         );
     }
 
     //执行文件内容的匹配及渲染搜索结果
-    function matchSeatchAndDisplay(searchResults, fileIndex, searchTerm, file, content) {
+    function matchSeatchAndDisplay(searchResults, fileName, searchTerm) {
+        const content = fileContents[fileName];
+        if(!content){
+            readFileByName(fileName, ()=>{
+                matchSeatchAndDisplay(searchResults, fileName, searchTerm);
+            });
+        }
         const regex = new RegExp(escapeRegExp(searchTerm),'gi');
         let match;
         const matches = [];
@@ -127,8 +180,8 @@ _on(document,'DOMContentLoaded', function() {
         }
 
         if (matches.length > 0) {
-            searchResults[fileIndex] = matches;
-            renderSearchResult(file, fileIndex, matches);
+            searchResults[fileName] = matches;
+            renderSearchResult(fileName, matches);
             return true;
         }
         return false;
@@ -148,33 +201,18 @@ _on(document,'DOMContentLoaded', function() {
         let filesProcessed = 0;
         let hasResults = false;
 
-        files.forEach(async (file, fileIndex) => {
+        for(let fileName in fileContents){
+            //const content = fileContents[fileName];
             //所有文件处理完再提示
             filesProcessed++;
-
-            if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
-                const wordContent = await displayWordFileContent(fileIndex);
-                hasResults = matchSeatchAndDisplay(searchResults, fileIndex, searchTerm, file, wordContent);
-                if (filesProcessed === files.length) {
-                    finishSearchFiles(hasResults);
-                }
-                return;
+            const currentHasResults = matchSeatchAndDisplay(searchResults, fileName, searchTerm);
+            if(currentHasResults){
+                hasResults = true;
             }
-
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                const content = e.target.result;
-                hasResults = matchSeatchAndDisplay(searchResults, fileIndex, searchTerm, file, content);
-                if (filesProcessed === files.length) {
-                    finishSearchFiles(hasResults);
-                }
+            if (filesProcessed === files.length) {
+                finishSearchFiles(hasResults);
             }
-            ;
-
-            reader.readAsText(file);
         }
-        );
 
         // 如果没有文件需要处理，立即提示
         if (files.length === 0) {
@@ -183,14 +221,14 @@ _on(document,'DOMContentLoaded', function() {
     }
 
     // 渲染搜索结果
-    function renderSearchResult(file, fileIndex, matches) {
+    function renderSearchResult(fileName, matches) {
         const resultGroup = _c('div');
         resultGroup.className = 'result-group';
 
         const resultHeader = _c('div');
         resultHeader.className = 'result-header';
         resultHeader.innerHTML = `
-            <span>${file.name} (${matches.length}处匹配)</span>
+            <span>${fileName} (${matches.length}处匹配)</span>
             <span>▶</span>
         `;
 
@@ -201,16 +239,17 @@ _on(document,'DOMContentLoaded', function() {
             const matchItem = _c('div');
             matchItem.className = 'match-item';
             matchItem.innerHTML = `...${highlightMatch(match.context, searchInput.value)}...`;
-            _on(matchItem,'click', () => {
-                displayFileContent(fileIndex);
-                scrollToMatch(fileIndex, matchIndex);
+            _on(matchItem, 'click', () => {
+                displayFileContentFromContents(fileName);
+                highlightMatchesInCurrentFile();
+                scrollToMatch(fileName, matchIndex);
             }
             );
             resultContent.appendChild(matchItem);
         }
         );
 
-        _on(resultHeader,'click', () => {
+        _on(resultHeader, 'click', () => {
             const isHidden = resultContent.style.display !== 'block';
             resultContent.style.display = isHidden ? 'block' : 'none';
             resultHeader.querySelector('span:last-child').textContent = isHidden ? '▼' : '▶';
@@ -230,11 +269,12 @@ _on(document,'DOMContentLoaded', function() {
 
     // 高亮当前文件中的匹配项
     function highlightMatchesInCurrentFile() {
-        if (currentFileIndex === -1 || !searchResults[currentFileIndex])
+        if (!currentFileName || !searchResults[currentFileName])
             return;
 
-        const content = contentDisplay.innerHTML;
-        const matches = searchResults[currentFileIndex];
+        //const content = contentDisplay.innerHTML;
+        const content = fileContents[currentFileName];
+        const matches = searchResults[currentFileName];
         let highlightedContent = '';
         let lastIndex = 0;
 
@@ -251,10 +291,10 @@ _on(document,'DOMContentLoaded', function() {
 
     // 导航匹配项
     function navigateMatch(direction) {
-        if (currentFileIndex === -1 || !searchResults[currentFileIndex])
+        if (!currentFileName || !searchResults[currentFileName])
             return;
 
-        const matches = searchResults[currentFileIndex];
+        const matches = searchResults[currentFileName];
         let newIndex = currentMatch.matchIndex + direction;
 
         if (newIndex < 0) {
@@ -263,23 +303,29 @@ _on(document,'DOMContentLoaded', function() {
             newIndex = 0;
         }
 
-        scrollToMatch(currentFileIndex, newIndex);
+        scrollToMatch(currentFileName, newIndex);
     }
 
     // 滚动到匹配项
-    function scrollToMatch(fileIndex, matchIndex) {
-        if (fileIndex !== currentFileIndex) {
-            displayFileContent(fileIndex);
+    function scrollToMatch(fileName, matchIndex) {
+        if (fileName !== currentFileName) {
+            displayFileContentFromContents(fileName);
         }
 
         currentMatch = {
-            fileIndex,
+            fileName,
             matchIndex
         };
-        const highlighted = _findAll(contentDisplay,'.highlight');
+        const highlighted = _findAll(contentDisplay, '.highlight');
 
-        if (highlighted.length > matchIndex) {
-            highlighted[matchIndex].scrollIntoView({
+        if (highlighted && highlighted.length > matchIndex) {
+            for(let i=0;i<highlighted.length;i++){
+                let className = highlighted[i].className;
+                highlighted[i].className = className.replace(" current-view","");
+            }
+            let currentHighlight = highlighted[matchIndex];
+            currentHighlight.className=currentHighlight.className+" current-view";
+            currentHighlight.scrollIntoView({
                 behavior: 'smooth',
                 block: 'center'
             });
