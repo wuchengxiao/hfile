@@ -9,7 +9,7 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: auto;
     margin: 0;
 }
 
@@ -138,6 +138,8 @@ body {
     font-size: 0.9rem;
     border-radius: 3px;
     word-break: break-word;
+    display: flex;
+    justify-content: space-between;
 }
 
 .file-item:hover {
@@ -218,4 +220,25 @@ section.pj-docx {
 
 .highlight.current-view {
     box-shadow: 1px 1px 4px 0px;
+    animation: blink 1s linear infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.file-item span {
+    margin: auto 0;
+    auto CONTAIN-INTRINSIC-BLOCK-SIZE: AUTO 100PX;
+}
+
+.nav-btn#delete-item-btn {
+    color: red;
+    display: none;
+    border-color: red;
+    padding: 3px 5px;
+    font-size: 12px;
+}
+
+.file-item:hover .nav-btn#delete-item-btn {
+    display: block;
 }

@@ -17,6 +17,7 @@ _on(document, 'DOMContentLoaded', function() {
     const resultContainer = _id('result-container');
     const prevBtn = _id('prev-btn');
     const nextBtn = _id('next-btn');
+    const fileContentsWordFileKeyNameSuffix = '_dom';
 
     let files = [];
     let fileContents = {};
@@ -58,46 +59,82 @@ _on(document, 'DOMContentLoaded', function() {
         files.forEach( (file, index) => {
             const fileItem = _c('div');
             fileItem.className = `file-item ${file.name === currentFileName ? 'active' : ''}`;
-            fileItem.textContent = file.name;
+            //fileItem.textContent = file.name;
+            fileItem.innerHTML=`<span>${file.name}</span>`;
+          
+            const fileItemDelBtn = _dom('<button class="nav-btn" id="delete-item-btn">删除</button>');
+            _on(fileItemDelBtn[0], 'click', () => removeFile(file));
+            fileItem.appendChild(fileItemDelBtn[0]);
+            
             fileContents[file.name] = null;
             _on(fileItem, 'click', () => displayFileContentFromContents(file.name));
+            
             fileListContainer.appendChild(fileItem);
         }
         );
     }
 
+    // 删除文件
+    function removeFile(file){
+        let fileIndex = files.findIndex(item=>item.name == file.name);
+        if(fileIndex<0){
+            showNotification(`未找到文件，或文件已经移除`);
+            return;
+        }
+        files.splice(fileIndex, 1);
+        delete fileContents[file.name];
+        delete fileContents[file.name+fileContentsWordFileKeyNameSuffix];
+        showNotification(`文件移除成功`);
+        renderFileList();
+        performSearchWithNotice(false);
+        
+    }
+
     // 读word文件内容
-    function readWordFile(file,cb) {
-        const reader = new FileReader();
+    function readWordFile(file, cb) {
         //const arrayBuffer = file.arrayBuffer();
         //const text = await file.text();
+        var options = {
+            inWrapper: false,
+            ignoreWidth: true,
+            ignoreHeight: true,
+            className: 'pj-docx',
+            useBase64URL: true,
+            ignoreFonts‌: true
+        };
+        var hiddenDiv = _c("div");
+        var fileName = file.name;
+        // var result = await docx.renderAsync(file, hiddenDiv, null, options);
+        // console.log("docx: finish",result);
+        // return hiddenDiv.innerHTML;
+        docx.renderAsync(file, hiddenDiv, null, options).then(x => {
+            cb(hiddenDiv);
+        }
+        );
+    }
+    function readWordFile1(file, cb) {
+        const reader = new FileReader();
         reader.onload = function(event) {
             const arrayBuffer = event.target.result;
             mammoth.convertToHtml({
                 arrayBuffer
-            }, {
-                // styleMap: ["w[color='EE0000'] => span.docx-color-red", "w[color='#EE0000'] => span.docx-color-red", "r[color='EE0000'] => span.docx-color-red", "r[color='#EE0000'] => span.docx-color-red", "r[style-name='0000FF'] => span.docx-color-blue", "r[style-name='008000'] => span.docx-color-green", "r[style-name='808080'] => span.docx-color-gray", "r[style-name='ffff00'] => span.docx-color-yellow", "r[style-name] => span.docx-color-custom[style='color:${color};']", "r:not([style-name]) => span"],
-                // transformDocument: mammoth.transforms.paragraph(element => {
-                //   if (element.color) {
-                //     return {
-                //       ...element,
-                //       style: `--docx-color: #${element.color};`
-                //     };
-                //   }
-                //   return element;
-                // })
-            }).then(result=>{
+            }, {// styleMap: ["w[color='EE0000'] => span.docx-color-red", "w[color='#EE0000'] => span.docx-color-red", "r[color='EE0000'] => span.docx-color-red", "r[color='#EE0000'] => span.docx-color-red", "r[style-name='0000FF'] => span.docx-color-blue", "r[style-name='008000'] => span.docx-color-green", "r[style-name='808080'] => span.docx-color-gray", "r[style-name='ffff00'] => span.docx-color-yellow", "r[style-name] => span.docx-color-custom[style='color:${color};']", "r:not([style-name]) => span"],
+            // transformDocument: mammoth.transforms.paragraph(element => {
+            //   if (element.color) {
+            //     return {
+            //       ...element,
+            //       style: `--docx-color: #${element.color};`
+            //     };
+            //   }
+            //   return element;
+            // })
+            }).then(result => {
                 cb(result.value);
-            });
+            }
+            );
             //return result.value;
         }
         return reader.readAsArrayBuffer(file);
-        // var options = { inWrapper: false, ignoreWidth: true, ignoreHeight: true, className:'pj-docx', ignoreFonts‌: true};
-        // var hiddenDiv = _c("div");
-        // var result = await docx.renderAsync(file, hiddenDiv, null, options);
-        // console.log("docx: finish",result);
-        // return hiddenDiv.innerHTML;
-        // .then(x => {console.log("docx: finished",x));
     }
 
     function afterDisplayFileContent() {
@@ -106,34 +143,36 @@ _on(document, 'DOMContentLoaded', function() {
     }
 
     // 从内存中显示文件内容
-    function displayFileContentFromContents(fileName){
-        const fileContent = fileContents[fileName];
-        if(fileContent == null){
-            readFileByName(fileName);
-        }
+    function displayFileContentFromContents(fileName) {
+        const fileContent = getContentFromFileContentsByFileName(fileName);
         contentDisplay.innerHTML = fileContent;
         currentFileName = fileName;
         afterDisplayFileContent();
     }
-    function readFileByName(fileName, cb){
-        const file = files.find(file=>file.name == fileName);
-        if(file.name.endsWith('.docx')){
+    function readFileByName(fileName, cb) {
+        const file = files.find(file => file.name == fileName);
+        if(!file){
+            return;
+        }
+        if (file.name.endsWith('.docx')) {
             const fileName = file.name;
-            readWordFile(file, (content)=>{
+            readWordFile(file, (wordDom) => {
+                fileContents[fileName+fileContentsWordFileKeyNameSuffix] = wordDom;
+                if (currentFileName = fileName) {
+                    displayFileContentFromContents(fileName);
+                }
+                cb && cb(wordDom);
+            }
+            );
+        } else {
+            readTextFile(file, (content) => {
                 fileContents[fileName] = content;
-                if(currentFileName = fileName){
+                if (currentFileName = fileName) {
                     displayFileContentFromContents(fileName);
                 }
                 cb && cb(content);
-            });
-        }else{
-            readTextFile(file,(content)=>{
-                fileContents[fileName] = content;
-                if(currentFileName = fileName){
-                    displayFileContentFromContents(fileName);
-                }
-                cb && cb(content);
-            })
+            }
+            )
         }
     }
     // 显示文件内容
@@ -153,19 +192,34 @@ _on(document, 'DOMContentLoaded', function() {
 
     // 更新活动文件样式
     function updateActiveFileStyle() {
-        document.querySelectorAll('.file-item').forEach( (item, index) => {
-            item.classList.toggle('active', item.textContent === currentFileName);
+        _findAll(null, '.file-item').forEach( (item, index) => {
+            item.classList.toggle('active', item.querySelector('span').textContent === currentFileName);
         }
         );
     }
 
+    function getContentFromFileContentsByFileName(fileName){
+        let fileContent;
+        if (fileName.endsWith('.docx')){
+            const wordDom = fileContents[fileName+fileContentsWordFileKeyNameSuffix];
+            fileContent = wordDom && wordDom.innerHTML || null;
+        }else{
+            fileContent = fileContents[fileName];
+        }
+        if (fileContent == null) {
+            readFileByName(fileName);
+        }
+        return fileContent;
+    }
+
     //执行文件内容的匹配及渲染搜索结果
     function matchSeatchAndDisplay(searchResults, fileName, searchTerm) {
-        const content = fileContents[fileName];
-        if(!content){
-            readFileByName(fileName, ()=>{
+        const content = getContentFromFileContentsByFileName(fileName);
+        if (!content) {
+            readFileByName(fileName, () => {
                 matchSeatchAndDisplay(searchResults, fileName, searchTerm);
-            });
+            }
+            );
         }
         const regex = new RegExp(escapeRegExp(searchTerm),'gi');
         let match;
@@ -190,8 +244,8 @@ _on(document, 'DOMContentLoaded', function() {
     function finishSearchFiles(hasResults) {
         showNotification(hasResults ? `搜索完成，共找到${Object.keys(searchResults).length}个文件包含结果` : '搜索完成，未找到匹配内容');
     }
-    // 执行搜索
-    function performSearch() {
+    // 是否带提示执行搜索
+    function performSearchWithNotice(isNotice){
         const searchTerm = searchInput.value.trim();
         if (!searchTerm)
             return;
@@ -201,23 +255,26 @@ _on(document, 'DOMContentLoaded', function() {
         let filesProcessed = 0;
         let hasResults = false;
 
-        for(let fileName in fileContents){
-            //const content = fileContents[fileName];
+        for (let fileName in fileContents) {
             //所有文件处理完再提示
             filesProcessed++;
             const currentHasResults = matchSeatchAndDisplay(searchResults, fileName, searchTerm);
-            if(currentHasResults){
+            if (currentHasResults) {
                 hasResults = true;
             }
-            if (filesProcessed === files.length) {
+            if (isNotice && filesProcessed === files.length) {
                 finishSearchFiles(hasResults);
             }
         }
 
         // 如果没有文件需要处理，立即提示
-        if (files.length === 0) {
+        if (isNotice && files.length === 0) {
             showNotification('没有可搜索的文件');
         }
+    }
+    // 执行搜索
+    function performSearch() {
+        performSearchWithNotice(true);
     }
 
     // 渲染搜索结果
@@ -273,7 +330,7 @@ _on(document, 'DOMContentLoaded', function() {
             return;
 
         //const content = contentDisplay.innerHTML;
-        const content = fileContents[currentFileName];
+        const content = getContentFromFileContentsByFileName(currentFileName);
         const matches = searchResults[currentFileName];
         let highlightedContent = '';
         let lastIndex = 0;
@@ -319,12 +376,12 @@ _on(document, 'DOMContentLoaded', function() {
         const highlighted = _findAll(contentDisplay, '.highlight');
 
         if (highlighted && highlighted.length > matchIndex) {
-            for(let i=0;i<highlighted.length;i++){
+            for (let i = 0; i < highlighted.length; i++) {
                 let className = highlighted[i].className;
-                highlighted[i].className = className.replace(" current-view","");
+                highlighted[i].className = className.replace(" current-view", "");
             }
             let currentHighlight = highlighted[matchIndex];
-            currentHighlight.className=currentHighlight.className+" current-view";
+            currentHighlight.className = currentHighlight.className + " current-view";
             currentHighlight.scrollIntoView({
                 behavior: 'smooth',
                 block: 'center'
