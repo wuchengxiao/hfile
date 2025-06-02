@@ -13,6 +13,12 @@ body {
     margin: 0;
 }
 
+.panel {
+    overflow: auto;
+    padding: 8px;
+    position: relative;
+}
+
 /* é¡¶éƒ¨åŒºåŸŸ */
 .header {
     display: flex;
@@ -21,6 +27,10 @@ body {
     min-height: 60px;
     background: #f8f9fa;
     flex-wrap: wrap;
+}
+
+.tools {
+    border-bottom: 1px solid #ddd;
 }
 
 .app-title {
@@ -78,11 +88,8 @@ body {
     flex-direction: column;
 }
 
-.panel {
-    overflow: auto;
-    padding: 8px;
+.main-content .panel {
     border-bottom: 1px solid #ddd;
-    position: relative;
 }
 
 .file-list-panel {
@@ -95,15 +102,32 @@ body {
 .content-panel {
     flex: 1;
     min-height: 30vh;
-    white-space: pre-wrap;
     background: #fff;
-    overflow-x: auto;
+}
+
+.content-panel .content-header {
+    flex-wrap: nowrap;
+    display: flex;
+    justify-content: center;
+    padding: 8px;
+    background-color: #f9f9f9;
+}
+
+.content-panel .content-display {
+    white-space: pre-wrap;
+    margin-top: 4px;
+    height: calc(100% - 38px);
 }
 
 .result-panel {
     flex: 0 0 auto;
     min-height: auto;
     background: #f8f9fa;
+    display: none;
+}
+
+.result-panel:has(.result-group) {
+    display: block;
 }
 
 /* å“åº”å¼è®¾è®¡ - æ¡Œé¢ç«¯ */
@@ -116,17 +140,17 @@ body {
         flex-direction: row;
     }
 
-    .panel {
+    .main-content .panel {
         border-right: 1px solid #ddd;
         border-bottom: none;
     }
 
     .file-list-panel {
-        flex: 0 0 250px;
+        flex: 0 0 200px;
     }
 
     .result-panel {
-        flex: 0 0 300px;
+        flex: 0 0 200px;
     }
 }
 
@@ -207,12 +231,29 @@ body {
     opacity: 1;
 }
 
-.docx-color-red { color: #FF0000; }
-.docx-color-blue { color: #0000FF; }
-.docx-color-green {color: green;}
-.docx-color-gray {color: gray;}
-.docx-color-yellow {color: yellow;}
-.docx-color-custom { color: var(--docx-color); }
+.docx-color-red {
+    color: #FF0000;
+}
+
+.docx-color-blue {
+    color: #0000FF;
+}
+
+.docx-color-green {
+    color: green;
+}
+
+.docx-color-gray {
+    color: gray;
+}
+
+.docx-color-yellow {
+    color: yellow;
+}
+
+.docx-color-custom {
+    color: var(--docx-color);
+}
 
 section.pj-docx {
     padding: 10px !important;
@@ -222,10 +263,17 @@ section.pj-docx {
     box-shadow: 1px 1px 4px 0px;
     animation: blink 1s linear infinite;
 }
+
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
 }
+
 .file-item span {
     margin: auto 0;
     auto CONTAIN-INTRINSIC-BLOCK-SIZE: AUTO 100PX;

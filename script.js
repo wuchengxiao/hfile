@@ -145,8 +145,9 @@ _on(document, 'DOMContentLoaded', function() {
     // 从内存中显示文件内容
     function displayFileContentFromContents(fileName) {
         const fileContent = getContentFromFileContentsByFileName(fileName);
-        contentDisplay.innerHTML = fileContent;
-        currentFileName = fileName;
+        //contentDisplay.innerHTML = fileContent;
+        contentDisplay.innerHTML = marked.parse(fileContent)
+        setCurrentFileName(fileName);
         afterDisplayFileContent();
     }
     function readFileByName(fileName, cb) {
@@ -158,7 +159,7 @@ _on(document, 'DOMContentLoaded', function() {
             const fileName = file.name;
             readWordFile(file, (wordDom) => {
                 fileContents[fileName+fileContentsWordFileKeyNameSuffix] = wordDom;
-                if (currentFileName = fileName) {
+                if (currentFileName == fileName) {
                     displayFileContentFromContents(fileName);
                 }
                 cb && cb(wordDom);
@@ -167,7 +168,7 @@ _on(document, 'DOMContentLoaded', function() {
         } else {
             readTextFile(file, (content) => {
                 fileContents[fileName] = content;
-                if (currentFileName = fileName) {
+                if (currentFileName == fileName) {
                     displayFileContentFromContents(fileName);
                 }
                 cb && cb(content);
@@ -175,9 +176,16 @@ _on(document, 'DOMContentLoaded', function() {
             )
         }
     }
+
+    // 设置当前文件名称
+    function setCurrentFileName(fileName){
+       currentFileName = fileName;
+       _id('currentFileName').textContent = fileName;
+    }
+    
     // 显示文件内容
     function readTextFile(file, cb) {
-        currentFileName = file.name;
+        setCurrentFileName(file.name);
         const reader = new FileReader();
 
         reader.onload = function(e) {
