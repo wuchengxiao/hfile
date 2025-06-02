@@ -33,7 +33,7 @@ _on(document, 'DOMContentLoaded', function() {
     _on(searchBtn, 'click', performSearch);
     _on(prevBtn, 'click', () => navigateMatch(-1));
     _on(nextBtn, 'click', () => navigateMatch(1));
-
+    
     // 确保面板在加载时正确显示滚动条
     function ensureScrollbars() {
         [fileListContainer, contentDisplay, resultContainer].forEach(panel => {
@@ -63,7 +63,10 @@ _on(document, 'DOMContentLoaded', function() {
             fileItem.innerHTML=`<span>${file.name}</span>`;
           
             const fileItemDelBtn = _dom('<button class="nav-btn" id="delete-item-btn">删除</button>');
-            _on(fileItemDelBtn[0], 'click', () => removeFile(file));
+            _on(fileItemDelBtn[0], 'click', () => {
+                removeFile(file);
+                event.stopPropagation();
+            });
             fileItem.appendChild(fileItemDelBtn[0]);
             
             fileContents[file.name] = null;
@@ -87,7 +90,13 @@ _on(document, 'DOMContentLoaded', function() {
         showNotification(`文件移除成功`);
         renderFileList();
         performSearchWithNotice(false);
-        
+        if (files.length > 0) {
+            let nextIndex = 0;
+            if(fileIndex != 0){
+                nextIndex = fileIndex-1;
+            }
+            displayFileContentFromContents(files[nextIndex].name);
+        }
     }
 
     // 读word文件内容
@@ -145,9 +154,8 @@ _on(document, 'DOMContentLoaded', function() {
     // 从内存中显示文件内容
     function displayFileContentFromContents(fileName) {
         const fileContent = getContentFromFileContentsByFileName(fileName);
-        //contentDisplay.innerHTML = fileContent;
-        contentDisplay.innerHTML = marked.parse(fileContent)
         setCurrentFileName(fileName);
+        showContentByContent(fileContent);
         afterDisplayFileContent();
     }
     function readFileByName(fileName, cb) {
@@ -182,6 +190,14 @@ _on(document, 'DOMContentLoaded', function() {
        currentFileName = fileName;
        _id('currentFileName').textContent = fileName;
     }
+
+    // 显示文件内容
+    function showContentByContent(fileContent){
+        if(fileContent){
+            contentDisplay.innerHTML = marked.parse(fileContent)
+            setCurrentFileName(currentFileName);
+        }
+    }
     
     // 显示文件内容
     function readTextFile(file, cb) {
@@ -190,7 +206,7 @@ _on(document, 'DOMContentLoaded', function() {
 
         reader.onload = function(e) {
             const fileContent = e.target.result;
-            contentDisplay.innerHTML = fileContent;
+            showContentByContent(fileContent);
             fileContents[file.name] = fileContent;
             afterDisplayFileContent();
             cb(fileContent);
@@ -336,8 +352,6 @@ _on(document, 'DOMContentLoaded', function() {
     function highlightMatchesInCurrentFile() {
         if (!currentFileName || !searchResults[currentFileName])
             return;
-
-        //const content = contentDisplay.innerHTML;
         const content = getContentFromFileContentsByFileName(currentFileName);
         const matches = searchResults[currentFileName];
         let highlightedContent = '';
@@ -351,7 +365,7 @@ _on(document, 'DOMContentLoaded', function() {
         );
 
         highlightedContent += content.substring(lastIndex);
-        contentDisplay.innerHTML = highlightedContent;
+        showContentByContent(highlightedContent);
     }
 
     // 导航匹配项

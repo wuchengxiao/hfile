@@ -19,6 +19,11 @@ body {
     position: relative;
 }
 
+/* 可添加点击效果 */
+.icon-show-left:active, .icon-show-right:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
 /* é¡¶éƒ¨åŒºåŸŸ */
 .header {
     display: flex;
@@ -110,13 +115,12 @@ body {
     display: flex;
     justify-content: center;
     padding: 8px;
-    background-color: #f9f9f9;
+    background-color: #e9ecef;
 }
 
 .content-panel .content-display {
-    white-space: pre-wrap;
     margin-top: 4px;
-    height: calc(100% - 38px);
+    height: calc(100% - 44px);
 }
 
 .result-panel {
