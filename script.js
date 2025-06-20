@@ -101,8 +101,6 @@ _on(document, 'DOMContentLoaded', function() {
 
     // 读word文件内容
     function readWordFile(file, cb) {
-        //const arrayBuffer = file.arrayBuffer();
-        //const text = await file.text();
         var options = {
             inWrapper: false,
             ignoreWidth: true,
@@ -113,9 +111,6 @@ _on(document, 'DOMContentLoaded', function() {
         };
         var hiddenDiv = _c("div");
         var fileName = file.name;
-        // var result = await docx.renderAsync(file, hiddenDiv, null, options);
-        // console.log("docx: finish",result);
-        // return hiddenDiv.innerHTML;
         docx.renderAsync(file, hiddenDiv, null, options).then(x => {
             cb(hiddenDiv);
         }
@@ -127,21 +122,11 @@ _on(document, 'DOMContentLoaded', function() {
             const arrayBuffer = event.target.result;
             mammoth.convertToHtml({
                 arrayBuffer
-            }, {// styleMap: ["w[color='EE0000'] => span.docx-color-red", "w[color='#EE0000'] => span.docx-color-red", "r[color='EE0000'] => span.docx-color-red", "r[color='#EE0000'] => span.docx-color-red", "r[style-name='0000FF'] => span.docx-color-blue", "r[style-name='008000'] => span.docx-color-green", "r[style-name='808080'] => span.docx-color-gray", "r[style-name='ffff00'] => span.docx-color-yellow", "r[style-name] => span.docx-color-custom[style='color:${color};']", "r:not([style-name]) => span"],
-            // transformDocument: mammoth.transforms.paragraph(element => {
-            //   if (element.color) {
-            //     return {
-            //       ...element,
-            //       style: `--docx-color: #${element.color};`
-            //     };
-            //   }
-            //   return element;
-            // })
+            }, {
             }).then(result => {
                 cb(result.value);
             }
             );
-            //return result.value;
         }
         return reader.readAsArrayBuffer(file);
     }
@@ -175,7 +160,7 @@ _on(document, 'DOMContentLoaded', function() {
             );
         } else {
             readTextFile(file, (content) => {
-                fileContents[fileName] = content;
+                fileContents[fileName+""] = content;
                 if (currentFileName == fileName) {
                     displayFileContentFromContents(fileName);
                 }
@@ -194,20 +179,17 @@ _on(document, 'DOMContentLoaded', function() {
     // 显示文件内容
     function showContentByContent(fileContent){
         if(fileContent){
-            contentDisplay.innerHTML = marked.parse(fileContent)
+            contentDisplay.innerHTML = fileContent;
             setCurrentFileName(currentFileName);
         }
     }
     
-    // 显示文件内容
+    // 读取文本文件内容
     function readTextFile(file, cb) {
-        setCurrentFileName(file.name);
         const reader = new FileReader();
 
         reader.onload = function(e) {
-            const fileContent = e.target.result;
-            showContentByContent(fileContent);
-            fileContents[file.name] = fileContent;
+            const fileContent = marked.parse(e.target.result);
             afterDisplayFileContent();
             cb(fileContent);
         }
@@ -321,7 +303,6 @@ _on(document, 'DOMContentLoaded', function() {
             matchItem.className = 'match-item';
             matchItem.innerHTML = `...${highlightMatch(match.context, searchInput.value)}...`;
             _on(matchItem, 'click', () => {
-                displayFileContentFromContents(fileName);
                 highlightMatchesInCurrentFile();
                 scrollToMatch(fileName, matchIndex);
             }
