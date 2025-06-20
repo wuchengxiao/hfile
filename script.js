@@ -53,6 +53,13 @@ _on(document, 'DOMContentLoaded', function() {
         }
     }
 
+    function setFileContents(fileName, fileContent){
+        fileContents[fileName] = fileContent;
+    }
+    function getFileContents(fileName){
+        return fileContents[fileName+""];
+    }
+
     // 渲染文件列表
     function renderFileList() {
         fileListContainer.innerHTML = '';
@@ -68,8 +75,8 @@ _on(document, 'DOMContentLoaded', function() {
                 event.stopPropagation();
             });
             fileItem.appendChild(fileItemDelBtn[0]);
-            
-            fileContents[file.name] = null;
+
+            setFileContents(file.name, null);
             _on(fileItem, 'click', () => displayFileContentFromContents(file.name));
             
             fileListContainer.appendChild(fileItem);
@@ -96,6 +103,8 @@ _on(document, 'DOMContentLoaded', function() {
                 nextIndex = fileIndex-1;
             }
             displayFileContentFromContents(files[nextIndex].name);
+        }else{
+            showContentByContent("没有文件，请选择文件");
         }
     }
 
@@ -151,7 +160,7 @@ _on(document, 'DOMContentLoaded', function() {
         if (file.name.endsWith('.docx')) {
             const fileName = file.name;
             readWordFile(file, (wordDom) => {
-                fileContents[fileName+fileContentsWordFileKeyNameSuffix] = wordDom;
+                setFileContents(fileName+fileContentsWordFileKeyNameSuffix,wordDom);
                 if (currentFileName == fileName) {
                     displayFileContentFromContents(fileName);
                 }
@@ -160,7 +169,7 @@ _on(document, 'DOMContentLoaded', function() {
             );
         } else {
             readTextFile(file, (content) => {
-                fileContents[fileName+""] = content;
+                setFileContents(fileName, content);
                 if (currentFileName == fileName) {
                     displayFileContentFromContents(fileName);
                 }
@@ -189,6 +198,7 @@ _on(document, 'DOMContentLoaded', function() {
         const reader = new FileReader();
 
         reader.onload = function(e) {
+            console.log('onload');
             const fileContent = marked.parse(e.target.result);
             afterDisplayFileContent();
             cb(fileContent);
@@ -207,10 +217,10 @@ _on(document, 'DOMContentLoaded', function() {
     function getContentFromFileContentsByFileName(fileName){
         let fileContent;
         if (fileName.endsWith('.docx')){
-            const wordDom = fileContents[fileName+fileContentsWordFileKeyNameSuffix];
+            const wordDom = getFileContents(fileName+fileContentsWordFileKeyNameSuffix);
             fileContent = wordDom && wordDom.innerHTML || null;
         }else{
-            fileContent = fileContents[fileName];
+            fileContent = getFileContents(fileName);
         }
         if (fileContent == null) {
             readFileByName(fileName);
